@@ -2,6 +2,13 @@ name: Build macOS Offline Transcriber
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "*.py"
+      - "*.sh"
+      - "extension/**"
+      - ".github/workflows/build-macos.yml"
 
 jobs:
   build-macos-arm64:
