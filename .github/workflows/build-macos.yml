@@ -31,7 +31,7 @@ jobs:
             -o /tmp/sensevoice-sample.wav
           result="$(python3 server.py --transcribe /tmp/sensevoice-sample.wav --title macOS-test)"
           echo "$result"
-          grep -q "湖北一公司" <<< "$result"
+          grep -q "我想问我在滨海新区有房" <<< "$result"
 
       - name: Build desktop app
         run: bash build_macos.sh
