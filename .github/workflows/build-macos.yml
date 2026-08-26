@@ -1,0 +1,31 @@
+name: Build macOS Offline Transcriber
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos-arm64:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prepare offline runtime
+        run: bash setup_macos.sh
+
+      - name: Build desktop app
+        run: bash build_macos.sh
+
+      - name: Create complete offline package
+        run: bash package_macos.sh
+
+      - name: Upload macOS package
+        uses: actions/upload-artifact@v4
+        with:
+          name: XHSOfflineTranscriber-macos-arm64
+          path: release/*-macos-arm64-*.zip
+          if-no-files-found: error

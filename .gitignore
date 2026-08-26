@@ -1,0 +1,13 @@
+runtime/
+output/
+build/
+dist/
+dist-windows/
+release/
+.build-venv/
+.build-venv-macos/
+build-macos/
+dist-macos/
+*.spec
+XHSOfflineTranscriber.exe
+__pycache__/

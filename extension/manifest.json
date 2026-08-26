@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "小红书离线转写助手",
+  "version": "0.1.0",
+  "description": "解析当前小红书视频，并交给本机 SenseVoice 离线转写。",
+  "permissions": ["storage", "scripting", "tabs"],
+  "host_permissions": [
+    "https://*.xiaohongshu.com/*",
+    "http://127.0.0.1:8765/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "离线提取视频文案",
+    "default_popup": "popup.html"
+  }
+}

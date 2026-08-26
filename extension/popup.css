@@ -1,0 +1,63 @@
+:root {
+  color-scheme: light;
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  color: #17191d;
+  background: #f4f5f7;
+  --accent: #ff2f4f;
+  --accent-dark: #e91f40;
+  --line: #e9eaed;
+  --muted: #777c85;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; width: 420px; min-height: 360px; }
+button { font: inherit; cursor: pointer; }
+.app-shell { min-height: 360px; padding: 20px; background: linear-gradient(180deg, #fff 0, #f7f8fa 190px); }
+.app-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.brand-mark { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 2px; flex: 0 0 auto; border-radius: 11px; background: linear-gradient(145deg, #ff4966, #ef1f42); box-shadow: 0 6px 16px rgba(239, 31, 66, .2); }
+.brand-mark i { display: block; width: 3px; border-radius: 3px; background: #fff; }
+.brand-mark i:nth-child(1) { height: 10px; }
+.brand-mark i:nth-child(2) { height: 18px; }
+.brand-mark i:nth-child(3) { height: 14px; }
+.brand-mark i:nth-child(4) { height: 7px; }
+h1 { margin: 0; font-size: 17px; letter-spacing: -.2px; }
+.brand p { margin: 4px 0 0; color: #8a8e96; font-size: 11px; }
+.status { position: relative; border-radius: 999px; padding: 5px 10px 5px 22px; font-size: 11px; white-space: nowrap; font-weight: 600; }
+.status::before { content: ""; position: absolute; left: 10px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: currentColor; }
+.status.checking { color: #936500; background: #fff5d6; }
+.status.ready { color: #087a46; background: #e4f7ed; }
+.status.offline { color: #bd3347; background: #feecef; }
+.action-card { margin-top: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.92); box-shadow: 0 8px 24px rgba(25, 28, 33, .055); }
+.page-hint { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.page-dot { width: 9px; height: 9px; border: 2px solid var(--accent); border-radius: 50%; box-shadow: 0 0 0 4px #fff0f3; }
+.page-hint strong { display: block; font-size: 13px; }
+.page-hint small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+#start { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 48px; border: 0; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #ff3656, #f11d42); box-shadow: 0 7px 16px rgba(241,29,66,.19); font-weight: 700; transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease; }
+#start:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 9px 20px rgba(241,29,66,.26); }
+#start:disabled { cursor: not-allowed; opacity: .48; box-shadow: none; }
+.start-icon { width: 16px; height: 16px; border: 2px solid currentColor; border-radius: 50%; position: relative; }
+.start-icon::after { content: ""; position: absolute; left: 5px; top: 3px; border-left: 5px solid currentColor; border-top: 3px solid transparent; border-bottom: 3px solid transparent; }
+.progress-card { display: flex; gap: 11px; align-items: flex-start; margin-top: 12px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.progress-card > div { min-width: 0; }
+.progress-card strong { display: block; font-size: 12px; }
+.progress-icon { width: 18px; height: 18px; flex: 0 0 auto; border-radius: 50%; border: 2px solid #c8cbd1; position: relative; }
+.progress-card.busy .progress-icon { border-color: #ffd2da; border-top-color: var(--accent); animation: spin .8s linear infinite; }
+.progress-card.completed .progress-icon { border-color: #25a66a; background: #25a66a; }
+.progress-card.completed .progress-icon::after { content: ""; position: absolute; left: 4px; top: 2px; width: 5px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.progress-card.failed .progress-icon { border-color: #d84a5f; }
+.progress-card.failed .progress-icon::before, .progress-card.failed .progress-icon::after { content: ""; position: absolute; left: 7px; top: 3px; width: 2px; height: 9px; background: #d84a5f; transform: rotate(45deg); }
+.progress-card.failed .progress-icon::after { transform: rotate(-45deg); }
+.message { margin: 3px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.error { margin: 10px 0 0; padding: 10px 12px; color: #ad2b40; background: #fff0f2; border: 1px solid #ffd9df; border-radius: 10px; font-size: 11px; line-height: 1.5; }
+.result-card { margin-top: 12px; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.result-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.result-head > div { min-width: 0; }
+.result-head span { display: block; color: #8c9097; font-size: 10px; }
+.result-head strong { display: block; max-width: 285px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.secondary { border: 1px solid #ffd2da; border-radius: 8px; padding: 6px 12px; color: var(--accent-dark); background: #fff6f7; font-size: 11px; font-weight: 600; }
+textarea { width: 100%; height: 170px; margin-top: 11px; resize: vertical; border: 1px solid #e1e3e7; border-radius: 10px; padding: 11px; font: 12px/1.7 inherit; color: #303238; background: #fafbfc; outline: none; }
+textarea:focus { border-color: #ffadba; box-shadow: 0 0 0 3px #fff0f3; }
+.output-file { display: block; margin-top: 7px; color: #9a9da4; overflow-wrap: anywhere; font-size: 10px; }
+footer { margin-top: 14px; color: #a3a6ac; text-align: center; font-size: 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
