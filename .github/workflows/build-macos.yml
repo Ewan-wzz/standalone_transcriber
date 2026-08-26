@@ -24,6 +24,15 @@ jobs:
       - name: Prepare offline runtime
         run: bash setup_macos.sh
 
+      - name: Verify native Chinese transcription
+        run: |
+          curl -fL --retry 3 \
+            https://raw.githubusercontent.com/QwenAudio/SenseVoice/main/runtime/llama.cpp/tests/sample.wav \
+            -o /tmp/sensevoice-sample.wav
+          result="$(python3 server.py --transcribe /tmp/sensevoice-sample.wav --title macOS-test)"
+          echo "$result"
+          grep -q "湖北一公司" <<< "$result"
+
       - name: Build desktop app
         run: bash build_macos.sh
 
