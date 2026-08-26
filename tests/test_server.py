@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from server import TranscriptionEngine, parse_transcription_output, safe_filename
+from server import TranscriptionEngine, format_transcript, parse_transcription_output, safe_filename
 
 
 class ServerUnitTests(unittest.TestCase):
@@ -12,6 +12,10 @@ class ServerUnitTests(unittest.TestCase):
     def test_transcription_parser_removes_model_tags(self):
         source = "<|zh|><|NEUTRAL|><|Speech|><|withitn|>湖北一公司。\n"
         self.assertEqual(parse_transcription_output(source), "湖北一公司。")
+
+    def test_transcript_is_grouped_at_sentence_boundaries(self):
+        source = "第一句。第二句。第三句。"
+        self.assertEqual(format_transcript(source, paragraph_length=8), "第一句。第二句。\n\n第三句。")
 
     def test_runtime_status_reports_missing_files(self):
         with tempfile.TemporaryDirectory() as name:

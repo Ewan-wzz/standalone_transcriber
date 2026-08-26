@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.2.0"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 MAX_VIDEO_BYTES = 1536 * 1024 * 1024
@@ -71,6 +71,26 @@ def parse_transcription_output(stdout: str) -> str:
         lines.append(value)
     result = "\n".join(lines).strip()
     return LEADING_TAGS_RE.sub("", result).strip()
+
+
+def format_transcript(text: str, paragraph_length: int = 110) -> str:
+    """按标点做轻量分段，不改写识别内容。"""
+    source = re.sub(r"[ \t]+", " ", text or "").strip()
+    if not source:
+        return ""
+    paragraphs: list[str] = []
+    current = ""
+    for part in re.split(r"(?<=[。！？!?])", source):
+        value = part.strip()
+        if not value:
+            continue
+        current += value
+        if len(current) >= paragraph_length:
+            paragraphs.append(current)
+            current = ""
+    if current:
+        paragraphs.append(current)
+    return "\n\n".join(paragraphs) if paragraphs else source
 
 
 @dataclass(slots=True)
@@ -209,13 +229,13 @@ class TranscriptionEngine:
                 ],
                 timeout=1800,
             )
-        text = parse_transcription_output(completed.stdout)
+        text = format_transcript(parse_transcription_output(completed.stdout))
         if not text:
             raise RuntimeError("转写程序没有返回文本")
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         stamp = time.strftime("%Y%m%d-%H%M%S")
-        output_name = f"{stamp}_{safe_filename(title, note_id or 'transcript')}.txt"
+        output_name = f"{safe_filename(title, note_id or '未命名视频')}_转写结果_{stamp}.txt"
         output_path = self.output_dir / output_name
         output_path.write_text(text, encoding="utf-8")
         return TranscriptionResult(

@@ -10,9 +10,9 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; width: 420px; min-height: 360px; }
+body { margin: 0; width: 420px; min-height: 330px; }
 button { font: inherit; cursor: pointer; }
-.app-shell { min-height: 360px; padding: 20px; background: linear-gradient(180deg, #fff 0, #f7f8fa 190px); }
+.app-shell { min-height: 330px; padding: 20px; background: linear-gradient(180deg, #fff 0, #f7f8fa 190px); }
 .app-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .brand-mark { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 2px; flex: 0 0 auto; border-radius: 11px; background: linear-gradient(145deg, #ff4966, #ef1f42); box-shadow: 0 6px 16px rgba(239, 31, 66, .2); }
@@ -56,8 +56,6 @@ h1 { margin: 0; font-size: 17px; letter-spacing: -.2px; }
 .result-head span { display: block; color: #8c9097; font-size: 10px; }
 .result-head strong { display: block; max-width: 285px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .secondary { border: 1px solid #ffd2da; border-radius: 8px; padding: 6px 12px; color: var(--accent-dark); background: #fff6f7; font-size: 11px; font-weight: 600; }
-textarea { width: 100%; height: 170px; margin-top: 11px; resize: vertical; border: 1px solid #e1e3e7; border-radius: 10px; padding: 11px; font: 12px/1.7 inherit; color: #303238; background: #fafbfc; outline: none; }
-textarea:focus { border-color: #ffadba; box-shadow: 0 0 0 3px #fff0f3; }
-.output-file { display: block; margin-top: 7px; color: #9a9da4; overflow-wrap: anywhere; font-size: 10px; }
+.output-file { display: block; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f1f3; color: #737880; overflow-wrap: anywhere; font-size: 10px; }
 footer { margin-top: 14px; color: #a3a6ac; text-align: center; font-size: 10px; }
 @keyframes spin { to { transform: rotate(360deg); } }

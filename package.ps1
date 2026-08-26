@@ -6,7 +6,7 @@ $sourceExe = Join-Path $appRoot 'dist-windows\XHSOfflineTranscriber.exe'
 $runtimeRoot = Join-Path $appRoot 'runtime'
 $releaseRoot = Join-Path $appRoot 'release'
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$packageName = "XHSOfflineTranscriber-0.1.0-windows-x64-$stamp"
+$packageName = "XHSOfflineTranscriber-0.2.0-windows-x64-$stamp"
 $packageRoot = Join-Path $releaseRoot $packageName
 
 $required = @(

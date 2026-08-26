@@ -1,5 +1,5 @@
-const SERVICE_URL = 'http://127.0.0.1:8765'
-const JOB_KEY = 'xhsOfflineTranscriptionJob'
+const JOB_KEY = 'xhsVideoDownloadJob'
+const DOWNLOAD_FOLDER = '小红书视频转写'
 let running = false
 
 async function saveJob(patch) {
@@ -9,7 +9,7 @@ async function saveJob(patch) {
   return next
 }
 
-// 与 NoteAI 采集插件 CAPTURE_VIDEO 使用同一套解析逻辑。
+// 复用 NoteAI 采集插件的页面解析方式，不对视频 URL 做额外限制。
 async function extractCurrentVideo(tabId) {
   const results = await chrome.scripting.executeScript({
     target: { tabId },
@@ -59,8 +59,8 @@ async function extractCurrentVideo(tabId) {
   return results?.[0]?.result || null
 }
 
-// 与 NoteAI 采集插件相同：在小红书页面上下文中下载，自动携带页面会话。
-async function downloadCurrentVideo(tabId, videoUrl) {
+// 在小红书页面上下文中读取视频，自动携带当前页面会话。
+async function readCurrentVideo(tabId, videoUrl) {
   const results = await chrome.scripting.executeScript({
     target: { tabId },
     world: 'MAIN',
@@ -85,7 +85,39 @@ async function downloadCurrentVideo(tabId, videoUrl) {
   return results?.[0]?.result || null
 }
 
-async function transcribeCurrentTab() {
+function safeFileName(value) {
+  return String(value || '小红书视频')
+    .replace(/[\\/:*?"<>|\n\r]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 70) || '小红书视频'
+}
+
+function localTimestamp(date = new Date()) {
+  const pad = value => String(value).padStart(2, '0')
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+}
+
+async function waitForDownload(downloadId) {
+  const existing = await chrome.downloads.search({ id: downloadId })
+  if (existing[0]?.state === 'complete') return
+  if (existing[0]?.state === 'interrupted') throw new Error('浏览器下载被中断')
+  return new Promise((resolve, reject) => {
+    const listener = delta => {
+      if (delta.id !== downloadId || !delta.state) return
+      if (delta.state.current === 'complete') {
+        chrome.downloads.onChanged.removeListener(listener)
+        resolve()
+      } else if (delta.state.current === 'interrupted') {
+        chrome.downloads.onChanged.removeListener(listener)
+        reject(new Error('浏览器下载被中断'))
+      }
+    }
+    chrome.downloads.onChanged.addListener(listener)
+  })
+}
+
+async function downloadCurrentTab() {
   if (running) return
   running = true
   try {
@@ -96,66 +128,56 @@ async function transcribeCurrentTab() {
     }
 
     const info = await extractCurrentVideo(tab.id)
-    if (!info?.url) throw new Error('未能解析到视频地址，请确认当前笔记是视频')
+    if (!info?.url) throw new Error('未能解析到视频，请确认当前笔记是视频')
 
-    await saveJob({
-      state: 'downloading',
-      message: '正在通过当前小红书页面读取视频…',
-      title: info.title || ''
-    })
-    const download = await downloadCurrentVideo(tab.id, info.url)
-    if (download?.error || !download?.dataUrl) {
-      throw new Error(`视频读取失败：${download?.error || '内容为空'}`)
+    await saveJob({ state: 'reading', message: '正在从当前页面读取视频…', title: info.title || '' })
+    const video = await readCurrentVideo(tab.id, info.url)
+    if (video?.error || !video?.dataUrl) {
+      throw new Error(`视频读取失败：${video?.error || '内容为空'}`)
     }
 
-    const videoBlob = await (await fetch(download.dataUrl)).blob()
-    const metadata = encodeURIComponent(JSON.stringify({
-      title: info.title || '',
-      note_id: info.noteId || '',
-      note_url: info.noteUrl || tab.url
-    }))
+    const stamp = localTimestamp()
+    const filename = `${DOWNLOAD_FOLDER}/${safeFileName(info.title || '未命名视频')}_${stamp}.mp4`
     await saveJob({
-      state: 'transcribing',
-      message: '视频已读取，正在本机离线转写…',
-      title: info.title || ''
+      state: 'saving',
+      message: `正在保存到“下载/${DOWNLOAD_FOLDER}”…`,
+      title: info.title || '',
+      filename,
+      size: video.size || 0
     })
-    const response = await fetch(`${SERVICE_URL}/api/transcribe-upload`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'X-Transcriber-Client': 'xhs-offline-extension',
-        'X-Transcriber-Metadata': metadata
-      },
-      body: videoBlob
-    })
-    const payload = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(payload.error || `本地服务返回 HTTP ${response.status}`)
+    const downloadId = await chrome.downloads.download({ url: video.dataUrl, filename, saveAs: false })
+    await saveJob({ downloadId })
+    await waitForDownload(downloadId)
     await saveJob({
       state: 'completed',
-      message: `转写完成，用时 ${payload.elapsed_seconds || 0} 秒`,
-      text: payload.text || '',
-      outputFile: payload.output_file || '',
-      title: payload.title || info.title || '',
+      message: `已保存到“下载/${DOWNLOAD_FOLDER}”，请在桌面程序中手动选择转写。`,
       error: ''
     })
   } catch (error) {
-    await saveJob({
-      state: 'failed',
-      message: '转写失败',
-      error: error?.message || String(error)
-    })
+    await saveJob({ state: 'failed', message: '下载失败', error: error?.message || String(error) })
   } finally {
     running = false
   }
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== 'START_TRANSCRIPTION') return false
-  if (running) {
-    sendResponse({ ok: false, error: '已有视频正在转写' })
+  if (message?.type === 'START_DOWNLOAD') {
+    if (running) {
+      sendResponse({ ok: false, error: '已有视频正在下载' })
+      return false
+    }
+    downloadCurrentTab()
+    sendResponse({ ok: true })
     return false
   }
-  transcribeCurrentTab()
-  sendResponse({ ok: true })
+  if (message?.type === 'SHOW_DOWNLOAD') {
+    chrome.storage.local.get(JOB_KEY).then(stored => {
+      const downloadId = stored[JOB_KEY]?.downloadId
+      if (Number.isInteger(downloadId)) chrome.downloads.show(downloadId)
+      else chrome.downloads.showDefaultFolder()
+    })
+    sendResponse({ ok: true })
+    return false
+  }
   return false
 })

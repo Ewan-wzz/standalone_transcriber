@@ -10,14 +10,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-from server import (
-    DEFAULT_HOST,
-    DEFAULT_PORT,
-    RequestHandler,
-    TranscriberServer,
-    TranscriptionEngine,
-    application_home,
-)
+from server import TranscriptionEngine, application_home
 
 
 class DesktopApp:
@@ -25,8 +18,6 @@ class DesktopApp:
         self.root = root
         self.home = application_home()
         self.engine = TranscriptionEngine(self.home)
-        self.http_server: TranscriberServer | None = None
-        self.server_thread: threading.Thread | None = None
         self.busy = False
 
         root.title("小红书离线视频转写")
@@ -38,7 +29,6 @@ class DesktopApp:
         self._configure_styles()
         self._build_ui()
         self._refresh_runtime()
-        root.after(150, self.start_service)
 
     def _configure_styles(self) -> None:
         style = ttk.Style()
@@ -73,7 +63,7 @@ class DesktopApp:
         ).pack(anchor="w", pady=(6, 0))
         self.status_label = tk.Label(
             header,
-            text="正在启动",
+            text="检查中",
             font=("Microsoft YaHei UI", 9, "bold"),
             padx=12,
             pady=6,
@@ -86,14 +76,14 @@ class DesktopApp:
         card.pack(fill="x", pady=(22, 16))
         tk.Label(
             card,
-            text="浏览器插件",
+            text="使用方式",
             font=("Microsoft YaHei UI", 12, "bold"),
             fg="#25272b",
             bg="#ffffff",
         ).grid(row=0, column=0, sticky="w")
         tk.Label(
             card,
-            text="打开小红书视频笔记后，点击插件里的“提取当前视频文案”。请保持本程序运行。",
+            text="插件会把视频保存到“下载/小红书视频转写”。下载完成后，在下方点击“选择视频”开始离线转写。",
             font=("Microsoft YaHei UI", 9),
             fg="#6f747c",
             bg="#ffffff",
@@ -101,9 +91,8 @@ class DesktopApp:
             justify="left",
         ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(7, 14))
         ttk.Button(card, text="打开插件文件夹", style="Action.TButton", command=self.open_extension).grid(row=2, column=0, sticky="w")
-        ttk.Button(card, text="打开结果文件夹", style="Action.TButton", command=self.open_output).grid(row=2, column=1, sticky="w", padx=(10, 0))
-        self.service_button = ttk.Button(card, text="停止本地服务", style="Action.TButton", command=self.toggle_service)
-        self.service_button.grid(row=2, column=2, sticky="e", padx=(10, 0))
+        ttk.Button(card, text="打开视频文件夹", style="Action.TButton", command=self.open_downloads).grid(row=2, column=1, sticky="w", padx=(10, 0))
+        ttk.Button(card, text="打开结果文件夹", style="Action.TButton", command=self.open_output).grid(row=2, column=2, sticky="w", padx=(10, 0))
         card.columnconfigure(2, weight=1)
 
         local_card = tk.Frame(outer, bg="#ffffff", padx=22, pady=18, highlightthickness=1, highlightbackground="#e1e3e7")
@@ -119,7 +108,7 @@ class DesktopApp:
         ).pack(side="left")
         self.local_button = ttk.Button(
             local_head,
-            text="选择视频",
+            text="选择视频（可多选）",
             style="Primary.TButton",
             command=self.choose_local_file,
         )
@@ -182,58 +171,18 @@ class DesktopApp:
         if status.ready:
             self.runtime_label.configure(text="离线模型与音视频组件已就绪", fg="#08783e")
             self.local_button.configure(state="normal" if not self.busy else "disabled")
+            self._set_status("离线组件已就绪", "ready")
             return True
         self.runtime_label.configure(text="缺少：" + "、".join(status.missing), fg="#a02b2b")
         self.local_button.configure(state="disabled")
+        self._set_status("组件未就绪", "error")
         return False
-
-    def start_service(self) -> None:
-        if self.http_server is not None:
-            return
-        if not self._refresh_runtime():
-            self._set_status("组件未安装", "error")
-            self.service_button.configure(text="启动本地服务", state="disabled")
-            return
-        try:
-            self.http_server = TranscriberServer(
-                (DEFAULT_HOST, DEFAULT_PORT),
-                RequestHandler,
-                self.engine,
-                event_callback=self._queue_server_event,
-            )
-        except OSError as exc:
-            self._set_status("端口被占用", "error")
-            self.service_button.configure(text="重新启动")
-            self.progress_label.configure(text=f"无法启动本地服务：{exc}", fg="#a02b2b")
-            return
-        self.server_thread = threading.Thread(target=self.http_server.serve_forever, daemon=True)
-        self.server_thread.start()
-        self._set_status("插件服务运行中", "ready")
-        self.service_button.configure(text="停止本地服务", state="normal")
-        self.progress_label.configure(text="服务已自动启动，可以使用浏览器插件。", fg="#08783e")
-
-    def stop_service(self) -> None:
-        server = self.http_server
-        if server is None:
-            return
-        self.http_server = None
-        server.shutdown()
-        server.server_close()
-        self._set_status("服务已停止", "warning")
-        self.service_button.configure(text="启动本地服务")
-        self.progress_label.configure(text="本地服务已停止，浏览器插件暂不可用。", fg="#805b00")
-
-    def toggle_service(self) -> None:
-        if self.http_server is None:
-            self.start_service()
-        else:
-            self.stop_service()
 
     def choose_local_file(self) -> None:
         if self.busy or not self._refresh_runtime():
             return
-        selected = filedialog.askopenfilename(
-            title="选择要转写的视频或音频",
+        selected = filedialog.askopenfilenames(
+            title="选择要批量转写的视频或音频",
             filetypes=[
                 ("视频和音频", "*.mp4 *.mov *.mkv *.avi *.m4a *.mp3 *.wav *.aac *.flac"),
                 ("所有文件", "*.*"),
@@ -242,70 +191,47 @@ class DesktopApp:
         if not selected:
             return
         self.busy = True
-        self.local_button.configure(state="disabled", text="正在转写…")
-        self.progress_label.configure(text=f"正在处理：{Path(selected).name}", fg="#805b00")
+        media_paths = [Path(path) for path in selected]
+        self.local_button.configure(state="disabled", text="批量转写中…")
+        self.progress_label.configure(text=f"已加入 {len(media_paths)} 个任务，正在后台顺序转写。", fg="#805b00")
         self.copy_button.configure(state="disabled")
         self.result_text.delete("1.0", "end")
-        thread = threading.Thread(target=self._transcribe_local, args=(Path(selected),), daemon=True)
+        thread = threading.Thread(target=self._transcribe_batch, args=(media_paths,), daemon=True)
         thread.start()
 
-    def _transcribe_local(self, media_path: Path) -> None:
-        try:
-            result = self.engine.transcribe_file(media_path, title=media_path.stem)
-            self.root.after(0, self._show_result, result.text, result.output_file, result.elapsed_seconds)
-        except Exception as exc:
-            self.root.after(0, self._show_error, str(exc))
+    def _transcribe_batch(self, media_paths: list[Path]) -> None:
+        results = []
+        failures = []
+        total = len(media_paths)
+        for index, media_path in enumerate(media_paths, start=1):
+            self.root.after(0, self._show_batch_progress, index, total, media_path.name)
+            try:
+                results.append(self.engine.transcribe_file(media_path, title=media_path.stem))
+            except Exception as exc:
+                failures.append((media_path.name, str(exc)))
+        self.root.after(0, self._show_batch_result, results, failures)
 
-    def _show_result(self, text: str, output_file: str, elapsed: float) -> None:
+    def _show_batch_progress(self, index: int, total: int, name: str) -> None:
+        self.progress_label.configure(text=f"正在转写 {index}/{total}：{name}", fg="#805b00")
+
+    def _show_batch_result(self, results: list, failures: list[tuple[str, str]]) -> None:
         self.busy = False
-        self.local_button.configure(state="normal", text="选择视频")
+        self.local_button.configure(state="normal", text="选择视频（可多选）")
         self.result_text.delete("1.0", "end")
-        self.result_text.insert("1.0", text)
-        self.copy_button.configure(state="normal")
-        self.progress_label.configure(text=f"转写完成，用时 {elapsed:.2f} 秒；已保存到 {output_file}", fg="#08783e")
-
-    def _show_error(self, error: str) -> None:
-        self.busy = False
-        self.local_button.configure(state="normal", text="选择视频")
-        self.progress_label.configure(text="转写失败", fg="#a02b2b")
-        messagebox.showerror("转写失败", error, parent=self.root)
-
-    def _queue_server_event(self, event: str, payload: dict) -> None:
-        self.root.after(0, self._handle_server_event, event, payload)
-
-    def _handle_server_event(self, event: str, payload: dict) -> None:
-        title = str(payload.get("title") or "当前小红书视频")
-        if event == "receiving":
-            size_mb = float(payload.get("size") or 0) / 1024 / 1024
-            self.busy = True
-            self.local_button.configure(state="disabled", text="插件任务进行中")
-            self.copy_button.configure(state="disabled")
-            self.result_text.delete("1.0", "end")
+        blocks = [f"【{result.title}】\n{result.text}" for result in results]
+        self.result_text.insert("1.0", "\n\n".join(blocks))
+        self.copy_button.configure(state="normal" if results else "disabled")
+        if failures:
             self.progress_label.configure(
-                text=f"正在接收插件视频：{title}（{size_mb:.1f} MB）",
-                fg="#805b00",
-            )
-            return
-        if event == "transcribing":
-            self.progress_label.configure(
-                text=f"视频已接收，正在离线识别：{title}",
-                fg="#805b00",
-            )
-            return
-        if event == "completed":
-            result = payload.get("result") or {}
-            self._show_result(
-                str(result.get("text") or ""),
-                str(result.get("output_file") or ""),
-                float(result.get("elapsed_seconds") or 0),
-            )
-            return
-        if event == "failed":
-            self.busy = False
-            self.local_button.configure(state="normal", text="选择视频")
-            self.progress_label.configure(
-                text=f"插件视频转写失败：{payload.get('error') or '未知错误'}",
+                text=f"批量任务完成：成功 {len(results)} 个，失败 {len(failures)} 个。",
                 fg="#a02b2b",
+            )
+            details = "\n".join(f"{name}：{error}" for name, error in failures)
+            messagebox.showwarning("部分任务失败", details, parent=self.root)
+        else:
+            self.progress_label.configure(
+                text=f"批量转写完成，共 {len(results)} 个文件；结果已分别保存到 output 文件夹。",
+                fg="#08783e",
             )
 
     def copy_text(self) -> None:
@@ -328,6 +254,11 @@ class DesktopApp:
         self.engine.output_dir.mkdir(parents=True, exist_ok=True)
         self._open_path(self.engine.output_dir)
 
+    def open_downloads(self) -> None:
+        path = Path.home() / "Downloads" / "小红书视频转写"
+        path.mkdir(parents=True, exist_ok=True)
+        self._open_path(path)
+
     @staticmethod
     def _open_path(path: Path) -> None:
         if sys.platform == "darwin":
@@ -340,10 +271,6 @@ class DesktopApp:
     def close(self) -> None:
         if self.busy and not messagebox.askyesno("正在转写", "当前任务尚未完成，确定退出吗？", parent=self.root):
             return
-        if self.http_server is not None:
-            self.http_server.shutdown()
-            self.http_server.server_close()
-            self.http_server = None
         self.root.destroy()
 
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>离线视频转写</title>
+  <title>小红书视频下载</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -12,11 +12,11 @@
       <div class="brand">
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
         <div>
-          <h1>视频文案提取</h1>
-          <p>本地离线识别 · 内容不上传</p>
+          <h1>小红书视频下载</h1>
+          <p>只负责下载 · 无需启动桌面程序</p>
         </div>
       </div>
-      <span id="service-status" class="status checking">检查中</span>
+      <span id="service-status" class="status ready">插件可用</span>
     </header>
 
     <section class="action-card">
@@ -24,12 +24,12 @@
         <span class="page-dot"></span>
         <div>
           <strong>当前小红书视频</strong>
-          <small>保持视频页面打开，点击即可开始</small>
+          <small>保存到“下载/小红书视频转写”文件夹</small>
         </div>
       </div>
-      <button id="start" type="button" disabled>
+      <button id="start" type="button">
         <span class="start-icon" aria-hidden="true"></span>
-        <span>提取视频文案</span>
+        <span>下载当前视频</span>
       </button>
     </section>
 
@@ -37,7 +37,7 @@
       <span class="progress-icon" aria-hidden="true"></span>
       <div>
         <strong id="progress-title">准备就绪</strong>
-        <p id="message" class="message">正在检查本地服务…</p>
+        <p id="message" class="message">打开小红书视频笔记后开始下载。</p>
       </div>
     </section>
     <p id="error" class="error" hidden></p>
@@ -45,15 +45,14 @@
     <section id="result" class="result-card" hidden>
       <div class="result-head">
         <div>
-          <span>转写结果</span>
+          <span>下载完成</span>
           <strong id="title">当前视频</strong>
         </div>
-        <button id="copy" type="button" class="secondary">复制</button>
+        <button id="show-download" type="button" class="secondary">在文件夹中显示</button>
       </div>
-      <textarea id="text" readonly></textarea>
       <small id="output-file" class="output-file"></small>
     </section>
-    <footer>SenseVoice · 在你的电脑上完成识别</footer>
+    <footer>下载完成后，请在桌面程序中手动转写</footer>
   </main>
   <script src="popup.js"></script>
 </body>

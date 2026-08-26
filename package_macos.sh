@@ -9,7 +9,7 @@ fi
 app_root="$(cd "$(dirname "$0")" && pwd)"
 release_root="$app_root/release"
 stamp="$(date +%Y%m%d-%H%M%S)"
-package_name="XHSOfflineTranscriber-0.1.0-macos-arm64-$stamp"
+package_name="XHSOfflineTranscriber-0.2.0-macos-arm64-$stamp"
 package_root="$release_root/$package_name"
 app_bundle="$app_root/dist-macos/XHSOfflineTranscriber.app"
 
