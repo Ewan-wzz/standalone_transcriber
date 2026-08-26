@@ -38,12 +38,12 @@ mkdir -p "$sensevoice_root" "$ffmpeg_root" "$model_root"
 echo "Downloading official SenseVoice Apple Silicon runtime..."
 runtime_archive="$setup_temp/sensevoice-runtime.tar.gz"
 curl -fL --retry 3 \
-  "https://github.com/QwenAudio/SenseVoice/releases/download/runtime-llamacpp-v0.1.9/funasr-llamacpp-macos-arm64.tar.gz" \
+  "https://github.com/QwenAudio/SenseVoice/releases/download/runtime-llamacpp-v0.1.4/funasr-llamacpp-macos-arm64.tar.gz" \
   -o "$runtime_archive"
-verify_sha256 "$runtime_archive" "2d5786784ad09d8f4def1d942f678728638fe601d00acf0dad7cf094a9328363"
+verify_sha256 "$runtime_archive" "010416baa6932c7ce67fda50eb421a65e8ae6fd248f06f8d2f7ec17d15ef2cba"
 mkdir -p "$setup_temp/sensevoice"
 tar -xzf "$runtime_archive" -C "$setup_temp/sensevoice"
-cp "$setup_temp/sensevoice/llama-funasr-vad" "$sensevoice_root/llama-funasr-sensevoice"
+cp "$setup_temp/sensevoice/llama-funasr-sensevoice" "$sensevoice_root/llama-funasr-sensevoice"
 chmod 755 "$sensevoice_root/llama-funasr-sensevoice"
 
 echo "Downloading verified Q8 and VAD models..."
